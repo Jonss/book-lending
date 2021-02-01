@@ -1,0 +1,27 @@
+version: '3.2'
+services: 
+    db:
+      image: postgres:12.3-alpine
+      container_name: book_lending_db
+      environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: book_lending
+      ports:
+      - 5433:5432
+    
+    app:
+      container_name: book_lending_app
+      build: .
+      ports: 
+      - 8000:8000
+      depends_on: 
+      - db
+      environment:
+      - ENV=local
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=book_lending
+      - APP_PORT=:8000
