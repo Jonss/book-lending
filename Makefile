@@ -20,3 +20,6 @@ run-docker: clean build
 
 test:
 	go test ./...
+
+cover:
+	go test -cover ./...

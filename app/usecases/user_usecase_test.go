@@ -21,6 +21,12 @@ func (m *UserRepositoryMock) CreateUser(user models.User) (*models.User, *errs.A
 	return result, args.Get(1).(*errs.AppError)
 }
 
+func (m *UserRepositoryMock) FindUserByExternalId(externalId uuid.UUID) (*models.User, *errs.AppError) {
+	args := m.Called(externalId)
+	result := args.Get(0).(*models.User)
+	return result, args.Get(1).(*errs.AppError)
+}
+
 func TestCreateUserWithSuccess(t *testing.T) {
 	repo := new(UserRepositoryMock)
 
@@ -30,7 +36,7 @@ func TestCreateUserWithSuccess(t *testing.T) {
 
 	usecase := NewCreateUserUseCase(repo)
 
-	result, err := usecase.Execute(userRequest())
+	result, err := usecase.Create(userRequest())
 
 	repo.AssertExpectations(t)
 
@@ -49,7 +55,7 @@ func TestCreateUserWithError(t *testing.T) {
 
 	usecase := NewCreateUserUseCase(repo)
 
-	result, err := usecase.Execute(userRequest())
+	result, err := usecase.Create(userRequest())
 
 	repo.AssertExpectations(t)
 

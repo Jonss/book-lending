@@ -20,12 +20,22 @@ func main() {
 	userRepository := repository.NewUserRepositoryDB(dbClient)
 	userUseCase := usecases.NewCreateUserUseCase(userRepository)
 
-	request := request.UserRequest{Email: "jupiter.stein@gmail.com", FullName: "Júpiter Stein"}
-	fmt.Println(request)
-	user, err := userUseCase.Execute(request)
+	bookRepository := repository.NewBookRepositoryDB(dbClient)
+	addBookUseCase := usecases.NewAddBookUsecase(bookRepository, userUseCase)
+
+	userRequest := request.UserRequest{Email: "jupiter.stein@gmail.com", FullName: "Júpiter Stein"}
+
+	bookRequest := request.BookRequest{Title: "Os demônios", Author: "Fiodor Dostoievski"}
+
+	fmt.Println(userRequest)
+	fmt.Println(bookRequest)
+	user, err := userUseCase.Create(userRequest)
+
+	book, err := addBookUseCase.Add(bookRequest, user.LoggedUserId)
 
 	fmt.Println(err)
 	fmt.Println(user)
+	fmt.Println(book)
 
 	fmt.Println("Ahoy World")
 }
