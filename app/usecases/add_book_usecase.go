@@ -13,16 +13,16 @@ type AddBookUsecase interface {
 }
 
 type DefaultAddBookUsecase struct {
-	repo        repositories.BookRepository
-	userUsecase UserUsecase
+	repo            repositories.BookRepository
+	findUserUsecase FindUserUsecase
 }
 
-func NewAddBookUsecase(repo repositories.BookRepository, userUsecase UserUsecase) AddBookUsecase {
-	return DefaultAddBookUsecase{repo, userUsecase}
+func NewAddBookUsecase(repo repositories.BookRepository, usecase FindUserUsecase) AddBookUsecase {
+	return DefaultAddBookUsecase{repo, usecase}
 }
 
 func (u DefaultAddBookUsecase) Add(req request.BookRequest, loggedUserId uuid.UUID) (*response.BookResponse, *errs.AppError) {
-	user, err := u.userUsecase.FindUserByID(loggedUserId)
+	user, err := u.findUserUsecase.FindUserByID(loggedUserId)
 	if err != nil {
 		return nil, err
 	}

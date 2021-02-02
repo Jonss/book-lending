@@ -18,10 +18,11 @@ func main() {
 	pg.MigratePSQL(dbClient)
 
 	userRepository := repository.NewUserRepositoryDB(dbClient)
-	userUseCase := usecases.NewCreateUserUseCase(userRepository)
+	createUserUsecase := usecases.NewCreateUserUseCase(userRepository)
+	findUserUsecase := usecases.NewFindUserUseCase(userRepository)
 
 	bookRepository := repository.NewBookRepositoryDB(dbClient)
-	addBookUseCase := usecases.NewAddBookUsecase(bookRepository, userUseCase)
+	addBookUseCase := usecases.NewAddBookUsecase(bookRepository, findUserUsecase)
 
 	userRequest := request.UserRequest{Email: "jupiter.stein@gmail.com", FullName: "Júpiter Stein"}
 
@@ -29,7 +30,7 @@ func main() {
 
 	fmt.Println(userRequest)
 	fmt.Println(bookRequest)
-	user, err := userUseCase.Create(userRequest)
+	user, err := createUserUsecase.Create(userRequest)
 
 	book, err := addBookUseCase.Add(bookRequest, user.LoggedUserId)
 

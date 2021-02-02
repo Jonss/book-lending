@@ -11,18 +11,12 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type UserRepositoryMock struct {
+type CreateUserRepositoryMock struct {
 	mock.Mock
 }
 
 func (m *UserRepositoryMock) CreateUser(user models.User) (*models.User, *errs.AppError) {
 	args := m.Called(user)
-	result := args.Get(0).(*models.User)
-	return result, args.Get(1).(*errs.AppError)
-}
-
-func (m *UserRepositoryMock) FindUserByExternalId(externalId uuid.UUID) (*models.User, *errs.AppError) {
-	args := m.Called(externalId)
 	result := args.Get(0).(*models.User)
 	return result, args.Get(1).(*errs.AppError)
 }
