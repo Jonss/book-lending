@@ -2,7 +2,6 @@ package request
 
 import (
 	"github.com/Jonss/book-lending/domain/models"
-	"github.com/google/uuid"
 )
 
 type UserRequest struct {
@@ -12,8 +11,7 @@ type UserRequest struct {
 
 func (r UserRequest) ToUser() models.User {
 	return models.User{
-		LoggedUserId: uuid.New(),
-		Email:        r.Email,
-		FullName:     r.FullName,
+		Email:    r.Email,
+		FullName: r.FullName,
 	}
 }

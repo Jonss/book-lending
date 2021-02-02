@@ -3,7 +3,7 @@ package request
 import (
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUserRequestToUser(t *testing.T) {
@@ -14,15 +14,6 @@ func TestUserRequestToUser(t *testing.T) {
 
 	user := userRequest.ToUser()
 
-	if user.Email != userRequest.Email {
-		t.Errorf("Email expected is %s. Got %s", userRequest.Email, user.Email)
-	}
-
-	if user.FullName != userRequest.FullName {
-		t.Errorf("FullName expected is %s. Got %s", userRequest.FullName, user.FullName)
-	}
-
-	if user.LoggedUserId == uuid.Nil {
-		t.Errorf("LoggedUserId must exist. Received %s", user.LoggedUserId)
-	}
+	assert.Equal(t, user.FullName, userRequest.FullName)
+	assert.Equal(t, user.Email, userRequest.Email)
 }

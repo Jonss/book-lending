@@ -8,4 +8,6 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/lib/pq v1.9.0
+	github.com/stretchr/testify v1.7.0
+	gotest.tools v2.2.0+incompatible
 )
