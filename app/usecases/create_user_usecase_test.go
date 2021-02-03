@@ -4,16 +4,12 @@ import (
 	"testing"
 
 	"github.com/Jonss/book-lending/app/dto/request"
+	"github.com/Jonss/book-lending/app/dto/response"
 	"github.com/Jonss/book-lending/domain/models"
 	"github.com/Jonss/book-lending/infra/errs"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
-
-type CreateUserRepositoryMock struct {
-	mock.Mock
-}
 
 func (m *UserRepositoryMock) CreateUser(user models.User) (*models.User, *errs.AppError) {
 	args := m.Called(user)
@@ -24,13 +20,13 @@ func (m *UserRepositoryMock) CreateUser(user models.User) (*models.User, *errs.A
 func TestCreateUserWithSuccess(t *testing.T) {
 	repo := new(UserRepositoryMock)
 
-	expected := userModel()
+	expected := userModelStub()
 
 	repo.On("CreateUser", expected).Return(&expected, (*errs.AppError)(nil))
 
 	usecase := NewCreateUserUseCase(repo)
 
-	result, err := usecase.Create(userRequest())
+	result, err := usecase.Create(userRequestStub())
 
 	repo.AssertExpectations(t)
 
@@ -43,13 +39,13 @@ func TestCreateUserWithSuccess(t *testing.T) {
 func TestCreateUserWithError(t *testing.T) {
 	repo := new(UserRepositoryMock)
 
-	expected := userModel()
+	expected := userModelStub()
 
 	repo.On("CreateUser", expected).Return((*models.User)(nil), errs.NewError("Error", 500))
 
 	usecase := NewCreateUserUseCase(repo)
 
-	result, err := usecase.Create(userRequest())
+	result, err := usecase.Create(userRequestStub())
 
 	repo.AssertExpectations(t)
 
@@ -58,17 +54,26 @@ func TestCreateUserWithError(t *testing.T) {
 	assert.Equal(t, 500, err.Code)
 }
 
-func userRequest() request.UserRequest {
+func userRequestStub() request.UserRequest {
 	return request.UserRequest{
 		Email:    "jupiter.stein@gmail.com",
 		FullName: "Jupiter Stein",
 	}
 }
 
-func userModel() models.User {
+func userModelStub() models.User {
 	return models.User{
 		Email:        "jupiter.stein@gmail.com",
 		FullName:     "Jupiter Stein",
 		LoggedUserId: uuid.UUID{},
+	}
+}
+
+func userResponseStub() response.UserResponse {
+	return response.UserResponse{
+		ID:           1,
+		FullName:     "Jupiter Stein",
+		Email:        "jupiter.stein@gmail.com",
+		LoggedUserId: uuid.New(),
 	}
 }

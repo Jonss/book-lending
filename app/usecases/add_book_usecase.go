@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"fmt"
+
 	"github.com/Jonss/book-lending/app/dto/request"
 	"github.com/Jonss/book-lending/app/dto/response"
 	"github.com/Jonss/book-lending/domain/repositories"
@@ -23,10 +25,17 @@ func NewAddBookUsecase(repo repositories.BookRepository, usecase FindUserUsecase
 
 func (u DefaultAddBookUsecase) Add(req request.BookRequest, loggedUserId uuid.UUID) (*response.BookResponse, *errs.AppError) {
 	user, err := u.findUserUsecase.FindUserByID(loggedUserId)
+
 	if err != nil {
 		return nil, err
 	}
+
 	book := req.ToBook(user.ID)
+
+	exists := u.repo.BookExists(book)
+	if exists {
+		return nil, errs.NewError(fmt.Sprintf("Book [%s] by [%s] already in user %d collection", book.Title, book.Author, book.OwnerID), 422)
+	}
 
 	createdBook, err := u.repo.CreateBook(book)
 	if err != nil {

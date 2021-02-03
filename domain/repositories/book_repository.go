@@ -7,4 +7,5 @@ import (
 
 type BookRepository interface {
 	CreateBook(models.Book) (*models.Book, *errs.AppError)
+	BookExists(models.Book) bool
 }

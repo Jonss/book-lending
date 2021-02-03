@@ -28,9 +28,10 @@ func main() {
 
 	bookRequest := request.BookRequest{Title: "Os demônios", Author: "Fiodor Dostoievski"}
 
-	fmt.Println(userRequest)
-	fmt.Println(bookRequest)
 	user, err := createUserUsecase.Create(userRequest)
+
+	fmt.Println(err)
+	fmt.Println(user)
 
 	book, err := addBookUseCase.Add(bookRequest, user.LoggedUserId)
 

@@ -15,9 +15,9 @@ type BookResponse struct {
 
 func (r BookResponse) ToResponse(book models.Book, userResponse UserResponse) *BookResponse {
 	return &BookResponse{
-		Title:     r.Title,
-		Author:    r.Title,
+		Title:     book.Title,
+		Author:    book.Author,
 		Owner:     userResponse,
-		CreatedAt: r.CreatedAt,
+		CreatedAt: book.CreatedAt,
 	}
 }

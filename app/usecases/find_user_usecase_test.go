@@ -23,7 +23,7 @@ func (m *UserRepositoryMock) FindUserByExternalId(externalId uuid.UUID) (*models
 func TestFindUserWithSuccess(t *testing.T) {
 	repo := new(UserRepositoryMock)
 
-	expected := userModel()
+	expected := userModelStub()
 
 	externalId := uuid.New()
 
