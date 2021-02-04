@@ -20,20 +20,25 @@ func (m *UserRepositoryMock) FindUserByExternalId(externalId uuid.UUID) (*models
 	return result, args.Get(1).(*errs.AppError)
 }
 
+func (m *UserRepositoryMock) FindUserByEmail(email string) (*models.User, *errs.AppError) {
+	args := m.Called(email)
+	result := args.Get(0).(*models.User)
+	return result, args.Get(1).(*errs.AppError)
+}
+
 func TestFindUserWithSuccess(t *testing.T) {
-	repo := new(UserRepositoryMock)
+	userRepositoryMock := new(UserRepositoryMock)
 
 	expected := userModelStub()
-
 	externalId := uuid.New()
 
-	repo.On("FindUserByExternalId", externalId).Return(&expected, (*errs.AppError)(nil))
+	userRepositoryMock.On("FindUserByExternalId", externalId).Return(&expected, (*errs.AppError)(nil))
 
-	usecase := NewFindUserUseCase(repo)
+	usecase := NewFindUserUseCase(userRepositoryMock)
 
 	result, err := usecase.FindUserByID(externalId)
 
-	repo.AssertExpectations(t)
+	userRepositoryMock.AssertExpectations(t)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "jupiter.stein@gmail.com", result.Email)
@@ -42,17 +47,17 @@ func TestFindUserWithSuccess(t *testing.T) {
 }
 
 func TestFindUserWithError(t *testing.T) {
-	repo := new(UserRepositoryMock)
+	userRepositoryMock := new(UserRepositoryMock)
 
 	externalId := uuid.New()
 
-	repo.On("FindUserByExternalId", externalId).Return((*models.User)(nil), errs.NewError("User not found", 404))
+	userRepositoryMock.On("FindUserByExternalId", externalId).Return((*models.User)(nil), errs.NewError("User not found", 404))
 
-	usecase := NewFindUserUseCase(repo)
+	usecase := NewFindUserUseCase(userRepositoryMock)
 
 	result, err := usecase.FindUserByID(externalId)
 
-	repo.AssertExpectations(t)
+	userRepositoryMock.AssertExpectations(t)
 
 	assert.Nil(t, result)
 	assert.Equal(t, "User not found", err.Message)

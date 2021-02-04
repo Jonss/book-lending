@@ -9,4 +9,5 @@ import (
 type UserRepository interface {
 	CreateUser(models.User) (*models.User, *errs.AppError)
 	FindUserByExternalId(uuid.UUID) (*models.User, *errs.AppError)
+	FindUserByEmail(email string) (*models.User, *errs.AppError)
 }

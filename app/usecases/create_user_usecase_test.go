@@ -69,11 +69,20 @@ func userModelStub() models.User {
 	}
 }
 
-func userResponseStub() response.UserResponse {
+func userResponseStub(ID int64) response.UserResponse {
 	return response.UserResponse{
-		ID:           1,
+		ID:           ID,
 		FullName:     "Jupiter Stein",
 		Email:        "jupiter.stein@gmail.com",
 		LoggedUserId: uuid.New(),
+	}
+}
+
+func userResponseToBuildStub(ID int64, email string, fullName string, externalId uuid.UUID) response.UserResponse {
+	return response.UserResponse{
+		ID:           ID,
+		FullName:     fullName,
+		Email:        email,
+		LoggedUserId: externalId,
 	}
 }

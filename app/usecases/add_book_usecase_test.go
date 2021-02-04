@@ -20,8 +20,8 @@ type FindUserUsecaseMock struct {
 	mock.Mock
 }
 
-func (m *BookRepositoryMock) CreateBook(model models.Book) (*models.Book, *errs.AppError) {
-	args := m.Called(model)
+func (m *BookRepositoryMock) CreateBook(book models.Book) (*models.Book, *errs.AppError) {
+	args := m.Called(book)
 	result := args.Get(0).(*models.Book)
 	return result, args.Get(1).(*errs.AppError)
 }
@@ -31,30 +31,45 @@ func (m *BookRepositoryMock) BookExists(book models.Book) bool {
 	return args.Bool(0)
 }
 
+func (m *BookRepositoryMock) FindBookByTitleAndOwnerId(title string, userID int64) (*models.Book, *errs.AppError) {
+	args := m.Called(title, userID)
+	result := args.Get(0).(*models.Book)
+	return result, args.Get(1).(*errs.AppError)
+}
+
 func (m *FindUserUsecaseMock) FindUserByID(externalId uuid.UUID) (*response.UserResponse, *errs.AppError) {
 	args := m.Called(externalId)
 	result := args.Get(0).(*response.UserResponse)
 	return result, args.Get(1).(*errs.AppError)
 }
 
+func (m *FindUserUsecaseMock) FindUserByEmail(email string) (*response.UserResponse, *errs.AppError) {
+	args := m.Called(email)
+	result := args.Get(0).(*response.UserResponse)
+	return result, args.Get(1).(*errs.AppError)
+}
+
 func TestAddBookSuccess(t *testing.T) {
-	repo := new(BookRepositoryMock)
-	findUserUsecase := new(FindUserUsecaseMock)
+	bookRepoMock := new(BookRepositoryMock)
+	findUserUsecaseMock := new(FindUserUsecaseMock)
+	bookStatusRepoMock := new(BookStatusRepositoryMock)
 
 	externalId := uuid.New()
-	expectedUser := userResponseStub()
-	expectedBook := bookStub()
+	expectedUser := userResponseStub(1)
+	expectedBook := bookModelStub()
 
-	repo.On("BookExists", expectedBook).Return(false)
-	findUserUsecase.On("FindUserByID", externalId).Return(&expectedUser, (*errs.AppError)(nil))
-	repo.On("CreateBook", expectedBook).Return(&expectedBook, (*errs.AppError)(nil))
+	bookRepoMock.On("BookExists", expectedBook).Return(false)
+	findUserUsecaseMock.On("FindUserByID", externalId).Return(&expectedUser, (*errs.AppError)(nil))
+	bookRepoMock.On("CreateBook", expectedBook).Return(&expectedBook, (*errs.AppError)(nil))
+	bookStatusRepoMock.On("AddStatus", expectedBook, expectedUser.ID, "IDLE").Return(&expectedBook, (*errs.AppError)(nil))
 
-	usecase := NewAddBookUsecase(repo, findUserUsecase)
+	usecase := NewAddBookUsecase(bookRepoMock, findUserUsecaseMock, bookStatusRepoMock)
 
 	result, err := usecase.Add(bookRequestStub(), externalId)
 
-	repo.AssertExpectations(t)
-	findUserUsecase.AssertExpectations(t)
+	bookRepoMock.AssertExpectations(t)
+	findUserUsecaseMock.AssertExpectations(t)
+	bookStatusRepoMock.AssertExpectations(t)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Arthur C. Clarke", result.Author)
@@ -66,22 +81,24 @@ func TestAddBookSuccess(t *testing.T) {
 }
 
 func TestAddBookErrorBookAlreadyInUserCollection(t *testing.T) {
-	repo := new(BookRepositoryMock)
-	findUserUsecase := new(FindUserUsecaseMock)
+	bookRepoMock := new(BookRepositoryMock)
+	findUserUsecaseMock := new(FindUserUsecaseMock)
+	bookStatusRepoMock := new(BookStatusRepositoryMock)
 
 	externalId := uuid.New()
-	expectedUser := userResponseStub()
-	expectedBook := bookStub()
+	expectedUser := userResponseStub(1)
+	expectedBook := bookModelStub()
 
-	repo.On("BookExists", expectedBook).Return(true)
-	findUserUsecase.On("FindUserByID", externalId).Return(&expectedUser, (*errs.AppError)(nil))
+	bookRepoMock.On("BookExists", expectedBook).Return(true)
+	findUserUsecaseMock.On("FindUserByID", externalId).Return(&expectedUser, (*errs.AppError)(nil))
 
-	usecase := NewAddBookUsecase(repo, findUserUsecase)
+	usecase := NewAddBookUsecase(bookRepoMock, findUserUsecaseMock, bookStatusRepoMock)
 
 	result, err := usecase.Add(bookRequestStub(), externalId)
 
-	repo.AssertExpectations(t)
-	findUserUsecase.AssertExpectations(t)
+	bookRepoMock.AssertExpectations(t)
+	findUserUsecaseMock.AssertExpectations(t)
+	bookStatusRepoMock.AssertExpectations(t)
 
 	assert.Equal(t, 422, err.Code)
 	assert.Equal(t, "Book [O fim da infância] by [Arthur C. Clarke] already in user 1 collection", err.Message)
@@ -89,23 +106,25 @@ func TestAddBookErrorBookAlreadyInUserCollection(t *testing.T) {
 }
 
 func TestAddBookErrorOnPersistence(t *testing.T) {
-	repo := new(BookRepositoryMock)
-	findUserUsecase := new(FindUserUsecaseMock)
+	bookRepoMock := new(BookRepositoryMock)
+	findUserUsecaseMock := new(FindUserUsecaseMock)
+	bookStatusRepoMock := new(BookStatusRepositoryMock)
 
 	externalId := uuid.New()
-	expectedUser := userResponseStub()
-	expectedBook := bookStub()
+	expectedUser := userResponseStub(1)
+	expectedBook := bookModelStub()
 
-	repo.On("BookExists", expectedBook).Return(false)
-	findUserUsecase.On("FindUserByID", externalId).Return(&expectedUser, (*errs.AppError)(nil))
-	repo.On("CreateBook", expectedBook).Return((*models.Book)(nil), errs.NewError("Error on persistence", 500))
+	bookRepoMock.On("BookExists", expectedBook).Return(false)
+	findUserUsecaseMock.On("FindUserByID", externalId).Return(&expectedUser, (*errs.AppError)(nil))
+	bookStatusRepoMock.On("CreateBook", expectedBook).Return((*models.Book)(nil), errs.NewError("Error on persistence", 500))
 
-	usecase := NewAddBookUsecase(repo, findUserUsecase)
+	usecase := NewAddBookUsecase(bookRepoMock, findUserUsecaseMock, bookStatusRepoMock)
 
 	result, err := usecase.Add(bookRequestStub(), externalId)
 
-	repo.AssertExpectations(t)
-	findUserUsecase.AssertExpectations(t)
+	bookRepoMock.AssertExpectations(t)
+	findUserUsecaseMock.AssertExpectations(t)
+	bookStatusRepoMock.AssertExpectations(t)
 
 	assert.Equal(t, 500, err.Code)
 	assert.Equal(t, "Error on persistence", err.Message)
@@ -119,7 +138,7 @@ func bookRequestStub() request.BookRequest {
 	}
 }
 
-func bookStub() models.Book {
+func bookModelStub() models.Book {
 	return models.Book{
 		Title:   "O fim da infância",
 		Author:  "Arthur C. Clarke",

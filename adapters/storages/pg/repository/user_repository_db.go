@@ -36,12 +36,25 @@ func (r UserRepositoryDb) CreateUser(user models.User) (*models.User, *errs.AppE
 	return &user, nil
 }
 
-func (r UserRepositoryDb) FindUserByExternalId(externalId uuid.UUID) (*models.User, *errs.AppError) {
-	logger.Info(fmt.Sprintf("Fetch user by ExternalId: %s", externalId.String()))
+func (r UserRepositoryDb) FindUserByExternalId(externalID uuid.UUID) (*models.User, *errs.AppError) {
+	logger.Info(fmt.Sprintf("Fetch user by ExternalId: %s", externalID.String()))
 
 	sql := `SELECT id, full_name, external_id, email FROM users where external_id = $1`
 
-	rows, err := r.client.Query(sql, externalId)
+	return handleFind(r.client, sql, externalID)
+}
+
+func (r UserRepositoryDb) FindUserByEmail(email string) (*models.User, *errs.AppError) {
+	logger.Info(fmt.Sprintf("Fetch user by Email: %s", email))
+
+	sql := `SELECT id, full_name, external_id, email FROM users where email = $1`
+
+	return handleFind(r.client, sql, email)
+
+}
+
+func handleFind(client *sql.DB, sql string, args ...interface{}) (*models.User, *errs.AppError) {
+	rows, err := client.Query(sql, args)
 	if err != nil {
 		logger.Error("Error fetching user: " + err.Error())
 		return nil, errs.NewError("user not found", 404)
@@ -50,7 +63,7 @@ func (r UserRepositoryDb) FindUserByExternalId(externalId uuid.UUID) (*models.Us
 	for rows.Next() {
 		var u models.User
 		rows.Scan(&u.ID, &u.FullName, &u.LoggedUserId, &u.ID)
-		logger.Info(fmt.Sprintf("User found: [%s - %s]"+u.Email, u.LoggedUserId.String()))
+		logger.Info(fmt.Sprintf("User found: [%s - %s]", u.Email, u.LoggedUserId.String()))
 		return &u, nil
 	}
 

@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"github.com/Jonss/book-lending/app/dto/response"
+	"github.com/Jonss/book-lending/domain/models"
 	"github.com/Jonss/book-lending/domain/repositories"
 	"github.com/Jonss/book-lending/infra/errs"
 	"github.com/google/uuid"
@@ -9,6 +10,7 @@ import (
 
 type FindUserUsecase interface {
 	FindUserByID(externalId uuid.UUID) (*response.UserResponse, *errs.AppError)
+	FindUserByEmail(email string) (*response.UserResponse, *errs.AppError)
 }
 
 type DefaultFindUserUsecase struct {
@@ -21,6 +23,15 @@ func NewFindUserUseCase(repo repositories.UserRepository) FindUserUsecase {
 
 func (u DefaultFindUserUsecase) FindUserByID(externalId uuid.UUID) (*response.UserResponse, *errs.AppError) {
 	user, err := u.repo.FindUserByExternalId(externalId)
+	return handleResponse(user, err)
+}
+
+func (u DefaultFindUserUsecase) FindUserByEmail(email string) (*response.UserResponse, *errs.AppError) {
+	user, err := u.repo.FindUserByEmail(email)
+	return handleResponse(user, err)
+}
+
+func handleResponse(user *models.User, err *errs.AppError) (*response.UserResponse, *errs.AppError) {
 	if err != nil {
 		return nil, err
 	}
