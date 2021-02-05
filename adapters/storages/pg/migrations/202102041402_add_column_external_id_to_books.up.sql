@@ -1,0 +1,1 @@
+alter table books add column slug varchar(255) not null;

@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/Jonss/book-lending/domain/models"
@@ -19,22 +20,17 @@ func NewBookRepositoryDB(client *sql.DB) BookRepositoryDb {
 }
 
 func (r BookRepositoryDb) CreateBook(book models.Book) (*models.Book, *errs.AppError) {
-	sql := `INSERT INTO books (title, author, owner_id, created_at) VALUES ($1, $2, $3, $4)`
+	sql := `INSERT INTO books (title, author, owner_id, created_at, slug) VALUES ($1, $2, $3, $4, $5) returning id`
 
+	var lastInsertID int64
 	book.CreatedAt = time.Now()
-	response, err := r.client.Exec(sql, book.Title, book.Author, book.OwnerID, book.CreatedAt)
+	err := r.client.QueryRow(sql, book.Title, book.Author, book.OwnerID, book.CreatedAt, book.Slug).Scan(&lastInsertID)
 	if err != nil {
 		logger.Info("Error while creating new book: " + err.Error())
-		return nil, errs.NewError("Unexpected error from database", 500)
+		return nil, errs.NewError("Unexpected error from database", http.StatusInternalServerError)
 	}
 
-	id, err := response.LastInsertId()
-	if err != nil {
-		logger.Info("Error while getting book id: " + err.Error())
-		return nil, errs.NewError("Unexpected error from database", 500)
-	}
-
-	book.ID = id
+	book.ID = lastInsertID
 
 	return &book, nil
 }
@@ -58,7 +54,7 @@ func (r BookRepositoryDb) FindBookByTitleAndOwnerId(title string, ownerID int64)
 	rows, err := r.client.Query(sql, ownerID, title)
 	if err != nil {
 		logger.Error("Error fetching book: " + err.Error())
-		return nil, errs.NewError("book not found", 404)
+		return nil, errs.NewError("book not found", http.StatusNotFound)
 	}
 
 	for rows.Next() {
@@ -68,5 +64,5 @@ func (r BookRepositoryDb) FindBookByTitleAndOwnerId(title string, ownerID int64)
 		return &b, nil
 	}
 
-	return nil, errs.NewError("book not found", 404)
+	return nil, errs.NewError("book not found", http.StatusNotFound)
 }

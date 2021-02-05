@@ -28,6 +28,12 @@ func (m *BookStatusRepositoryMock) VerifyStatus(book models.Book) *errs.AppError
 	return args.Get(0).(*errs.AppError)
 }
 
+func (m *BookStatusRepositoryMock) FindStatusBySlug(slug string) (*models.BookStatus, *errs.AppError) {
+	args := m.Called(slug)
+	result := args.Get(0).(*models.BookStatus)
+	return result, args.Get(1).(*errs.AppError)
+}
+
 func TestLendBookToUserWithSuccess(t *testing.T) {
 	bookStatusRepoMock := new(BookStatusRepositoryMock)
 	bookRepoMock := new(BookRepositoryMock)

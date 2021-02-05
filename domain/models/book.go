@@ -8,4 +8,5 @@ type Book struct {
 	Author    string
 	OwnerID   int64
 	CreatedAt time.Time
+	Slug      string
 }

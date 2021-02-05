@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
 
 	"github.com/Jonss/book-lending/domain/models"
 	"github.com/Jonss/book-lending/infra/errs"
@@ -53,11 +54,11 @@ func (r UserRepositoryDb) FindUserByEmail(email string) (*models.User, *errs.App
 
 }
 
-func handleFind(client *sql.DB, sql string, args ...interface{}) (*models.User, *errs.AppError) {
+func handleFind(client *sql.DB, sql string, args interface{}) (*models.User, *errs.AppError) {
 	rows, err := client.Query(sql, args)
 	if err != nil {
 		logger.Error("Error fetching user: " + err.Error())
-		return nil, errs.NewError("user not found", 404)
+		return nil, errs.NewError("user not found", http.StatusNotFound)
 	}
 
 	for rows.Next() {
@@ -67,5 +68,5 @@ func handleFind(client *sql.DB, sql string, args ...interface{}) (*models.User, 
 		return &u, nil
 	}
 
-	return nil, errs.NewError("user not found", 404)
+	return nil, errs.NewError("user not found", http.StatusNotFound)
 }

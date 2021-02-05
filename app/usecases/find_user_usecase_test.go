@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/Jonss/book-lending/domain/models"
@@ -51,11 +52,48 @@ func TestFindUserWithError(t *testing.T) {
 
 	externalId := uuid.New()
 
-	userRepositoryMock.On("FindUserByExternalId", externalId).Return((*models.User)(nil), errs.NewError("User not found", 404))
+	userRepositoryMock.On("FindUserByExternalId", externalId).Return((*models.User)(nil), errs.NewError("User not found", http.StatusNotFound))
 
 	usecase := NewFindUserUseCase(userRepositoryMock)
 
 	result, err := usecase.FindUserByID(externalId)
+
+	userRepositoryMock.AssertExpectations(t)
+
+	assert.Nil(t, result)
+	assert.Equal(t, "User not found", err.Message)
+	assert.Equal(t, 404, err.Code)
+}
+
+func TestFindUserByEmailWithSuccess(t *testing.T) {
+	userRepositoryMock := new(UserRepositoryMock)
+
+	expected := userModelStub()
+
+	userRepositoryMock.On("FindUserByEmail", expected.Email).Return(&expected, (*errs.AppError)(nil))
+
+	usecase := NewFindUserUseCase(userRepositoryMock)
+
+	result, err := usecase.FindUserByEmail(expected.Email)
+
+	userRepositoryMock.AssertExpectations(t)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "jupiter.stein@gmail.com", result.Email)
+	assert.Equal(t, "Jupiter Stein", result.FullName)
+	assert.NotNil(t, result.LoggedUserId)
+}
+
+func TestFindUseByEmailWithError(t *testing.T) {
+	userRepositoryMock := new(UserRepositoryMock)
+
+	email := "franz.ferdinand@gmail.com"
+
+	userRepositoryMock.On("FindUserByEmail", email).Return((*models.User)(nil), errs.NewError("User not found", http.StatusNotFound))
+
+	usecase := NewFindUserUseCase(userRepositoryMock)
+
+	result, err := usecase.FindUserByEmail(email)
 
 	userRepositoryMock.AssertExpectations(t)
 

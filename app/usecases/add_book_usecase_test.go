@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/Jonss/book-lending/app/dto/request"
@@ -116,7 +117,7 @@ func TestAddBookErrorOnPersistence(t *testing.T) {
 
 	bookRepoMock.On("BookExists", expectedBook).Return(false)
 	findUserUsecaseMock.On("FindUserByID", externalId).Return(&expectedUser, (*errs.AppError)(nil))
-	bookStatusRepoMock.On("CreateBook", expectedBook).Return((*models.Book)(nil), errs.NewError("Error on persistence", 500))
+	bookRepoMock.On("CreateBook", expectedBook).Return((*models.Book)(nil), errs.NewError("Error on persistence", http.StatusInternalServerError))
 
 	usecase := NewAddBookUsecase(bookRepoMock, findUserUsecaseMock, bookStatusRepoMock)
 
@@ -143,5 +144,6 @@ func bookModelStub() models.Book {
 		Title:   "O fim da infância",
 		Author:  "Arthur C. Clarke",
 		OwnerID: 1,
+		Slug:    "o-fim-da-infancia-1",
 	}
 }
