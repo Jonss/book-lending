@@ -34,7 +34,7 @@ func (u DefaultAddBookUsecase) Add(req request.BookRequest, loggedUserId uuid.UU
 
 	exists := u.repo.BookExists(book)
 	if exists {
-		return nil, errs.NewError(fmt.Sprintf("Book [%s] by [%s] already in user %d collection", book.Title, book.Author, book.OwnerID), 422)
+		return nil, errs.NewError(fmt.Sprintf("Book [%s] already in user %d collection", book.Title, book.OwnerID), 422)
 	}
 
 	createdBook, err := u.repo.CreateBook(book)

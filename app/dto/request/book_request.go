@@ -6,15 +6,15 @@ import (
 )
 
 type BookRequest struct {
-	Title  string `json:"title"`
-	Author string `author:"author"`
+	Title string `json:"title"`
+	Pages int    `author:"pages"`
 }
 
 func (r BookRequest) ToBook(userID int64) models.Book {
 	return models.Book{
-		Author:  r.Author,
 		Title:   r.Title,
 		OwnerID: userID,
+		Pages:   r.Pages,
 		Slug:    util.Slug(r.Title, userID),
 	}
 }

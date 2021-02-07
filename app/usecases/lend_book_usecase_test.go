@@ -62,7 +62,7 @@ func TestLendBookToUserWithSuccess(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "O fim da infância", result.Title)
-	assert.Equal(t, "Arthur C. Clarke", result.Author)
+	assert.Equal(t, 299, result.Pages)
 	assert.Equal(t, int64(1), result.OwnerID)
 	assert.NotNil(t, result.CreatedAt)
 }

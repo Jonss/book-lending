@@ -18,7 +18,7 @@ services:
       depends_on: 
       - db
       environment:
-      - ENV=local
+      - ENV=docker-local
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=postgres

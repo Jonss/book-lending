@@ -73,8 +73,8 @@ func TestAddBookSuccess(t *testing.T) {
 	bookStatusRepoMock.AssertExpectations(t)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "Arthur C. Clarke", result.Author)
 	assert.Equal(t, "O fim da infância", result.Title)
+	assert.Equal(t, 299, result.Pages)
 	assert.Equal(t, "Jupiter Stein", result.Owner.FullName)
 	assert.Equal(t, "jupiter.stein@gmail.com", result.Owner.Email)
 	assert.Equal(t, int64(1), result.Owner.ID)
@@ -102,7 +102,7 @@ func TestAddBookErrorBookAlreadyInUserCollection(t *testing.T) {
 	bookStatusRepoMock.AssertExpectations(t)
 
 	assert.Equal(t, 422, err.Code)
-	assert.Equal(t, "Book [O fim da infância] by [Arthur C. Clarke] already in user 1 collection", err.Message)
+	assert.Equal(t, "Book [O fim da infância] already in user 1 collection", err.Message)
 	assert.Nil(t, result)
 }
 
@@ -134,16 +134,16 @@ func TestAddBookErrorOnPersistence(t *testing.T) {
 
 func bookRequestStub() request.BookRequest {
 	return request.BookRequest{
-		Title:  "O fim da infância",
-		Author: "Arthur C. Clarke",
+		Title: "O fim da infância",
+		Pages: 299,
 	}
 }
 
 func bookModelStub() models.Book {
 	return models.Book{
 		Title:   "O fim da infância",
-		Author:  "Arthur C. Clarke",
 		OwnerID: 1,
+		Pages:   299,
 		Slug:    "o-fim-da-infancia-1",
 	}
 }

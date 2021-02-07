@@ -56,7 +56,7 @@ func (r BookStatusRepositoryDb) FindStatusBySlug(slug string) (*models.BookStatu
 	logger.Info(fmt.Sprintf("Search book slug [%s]", slug))
 
 	sql := `
-		SELECT b.id, b.title, b.author, b.owner_id, b.created_at,
+		SELECT b.id, b.title, b.owner_id, b.created_at,
 		bs.id, bs.status, bs.bearer_user_id
 		FROM books b
 		INNER JOIN books_status bs
@@ -66,9 +66,9 @@ func (r BookStatusRepositoryDb) FindStatusBySlug(slug string) (*models.BookStatu
 	row := r.client.QueryRow(sql, slug)
 
 	var bookID, ownerID, bookStatusID, bearerUserID int64
-	var title, author, status string
+	var title, status string
 	var createdAt time.Time
-	errScan := row.Scan(&bookID, &title, &author, &ownerID, &createdAt, &bookStatusID, &status, &bearerUserID)
+	errScan := row.Scan(&bookID, &title, &ownerID, &createdAt, &bookStatusID, &status, &bearerUserID)
 
 	if errScan != nil {
 		logger.Error("Error getting book status" + errScan.Error())
@@ -81,7 +81,6 @@ func (r BookStatusRepositoryDb) FindStatusBySlug(slug string) (*models.BookStatu
 		Book: models.Book{
 			ID:      bookID,
 			Title:   title,
-			Author:  author,
 			OwnerID: ownerID,
 		},
 	}

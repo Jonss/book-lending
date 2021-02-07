@@ -20,11 +20,11 @@ func NewBookRepositoryDB(client *sql.DB) BookRepositoryDb {
 }
 
 func (r BookRepositoryDb) CreateBook(book models.Book) (*models.Book, *errs.AppError) {
-	sql := `INSERT INTO books (title, author, owner_id, created_at, slug) VALUES ($1, $2, $3, $4, $5) returning id`
+	sql := `INSERT INTO books (title, owner_id, created_at, pages, slug) VALUES ($1, $2, $3, $4, $5) returning id`
 
 	var lastInsertID int64
 	book.CreatedAt = time.Now()
-	err := r.client.QueryRow(sql, book.Title, book.Author, book.OwnerID, book.CreatedAt, book.Slug).Scan(&lastInsertID)
+	err := r.client.QueryRow(sql, book.Title, book.OwnerID, book.CreatedAt, book.Pages, book.Slug).Scan(&lastInsertID)
 	if err != nil {
 		logger.Info("Error while creating new book: " + err.Error())
 		return nil, errs.NewError("Unexpected error from database", http.StatusInternalServerError)
@@ -36,10 +36,10 @@ func (r BookRepositoryDb) CreateBook(book models.Book) (*models.Book, *errs.AppE
 }
 
 func (r BookRepositoryDb) BookExists(book models.Book) bool {
-	sql := `SELECT COUNT(*) FROM books WHERE owner_id = $1 AND title = $2 AND author = $3`
+	sql := `SELECT COUNT(*) FROM books WHERE owner_id = $1 AND title = $2`
 
 	var counter int
-	err := r.client.QueryRow(sql, book.OwnerID, book.Title, book.Author).Scan(&counter)
+	err := r.client.QueryRow(sql, book.OwnerID, book.Title).Scan(&counter)
 	if err != nil {
 		return true
 	}
@@ -49,7 +49,7 @@ func (r BookRepositoryDb) BookExists(book models.Book) bool {
 func (r BookRepositoryDb) FindBookByTitleAndOwnerId(title string, ownerID int64) (*models.Book, *errs.AppError) {
 	logger.Info(fmt.Sprintf("Search book [%s]", title))
 
-	sql := `SELECT (id, title, author, owner_id, created_at) from books where owner_id = $1 AND title = $2`
+	sql := `SELECT (id, title, owner_id, created_at, pages) from books where owner_id = $1 AND title = $2`
 
 	rows, err := r.client.Query(sql, ownerID, title)
 	if err != nil {
@@ -59,10 +59,11 @@ func (r BookRepositoryDb) FindBookByTitleAndOwnerId(title string, ownerID int64)
 
 	for rows.Next() {
 		var b models.Book
-		rows.Scan(&b.ID, &b.Title, &b.Author, &b.OwnerID, &b.CreatedAt)
+		rows.Scan(&b.ID, &b.Title, &b.OwnerID, &b.CreatedAt, &b.Pages)
 		logger.Info(fmt.Sprintf("Book found: [Title: %s - OwnerID: %d]", b.Title, b.OwnerID))
 		return &b, nil
 	}
 
+	logger.Info(fmt.Sprintf("Book found: [Title: %s - OwnerID: %d]", title, ownerID))
 	return nil, errs.NewError("book not found", http.StatusNotFound)
 }
