@@ -25,6 +25,10 @@ func (r BookStatusRepositoryDb) AddStatus(book models.Book, bearerID int64, stat
 
 	createdAt := time.Now()
 
+	if status == "IDLE" {
+		updatePreviousStatus(r.client, book.ID)
+	}
+
 	sql := "INSERT INTO books_status(book_id, bearer_user_id, status, created_at) VALUES ($1, $2, $3, $4)"
 
 	_, err := r.client.Exec(sql, book.ID, bearerID, status, createdAt)
@@ -107,4 +111,23 @@ func (r BookStatusRepositoryDb) FindStatusBySlug(slug string) (*models.BookStatu
 	}
 
 	return &bookStatus, nil
+}
+
+func updatePreviousStatus(client *sql.DB, bookID int64) {
+	sql := "select id from books_status where book_id = $1 order by id desc limit 1"
+
+	row := client.QueryRow(sql, bookID)
+
+	var bookStatusID int
+	err := row.Scan(&bookStatusID)
+	if err != nil {
+		logger.Error("error searching book_status")
+	}
+
+	sql = "update books_status set returned_at = $1 where id = $2"
+
+	_, err = client.Exec(sql, time.Now(), bookStatusID)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error updating latest book_status with id %d, %s", bookStatusID, err.Error()))
+	}
 }
