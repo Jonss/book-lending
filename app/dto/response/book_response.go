@@ -25,3 +25,12 @@ func (r BookResponse) ToResponse(book models.Book, userResponse UserResponse, st
 		ExternalID: book.Slug,
 	}
 }
+
+func ToBookResponse(book models.Book) BookResponse {
+	return BookResponse{
+		Title:      book.Title,
+		CreatedAt:  book.CreatedAt,
+		Pages:      book.Pages,
+		ExternalID: book.Slug,
+	}
+}

@@ -44,9 +44,9 @@ func (m *FindUserUsecaseMock) FindUserByID(externalId uuid.UUID) (*response.User
 	return result, args.Get(1).(*errs.AppError)
 }
 
-func (m *FindUserUsecaseMock) FindUserByEmail(email string) (*response.UserResponse, *errs.AppError) {
-	args := m.Called(email)
-	result := args.Get(0).(*response.UserResponse)
+func (m *BookRepositoryMock) FindBooksByOwner(userID int64) ([]models.Book, *errs.AppError) {
+	args := m.Called(userID)
+	result := args.Get(0).([]models.Book)
 	return result, args.Get(1).(*errs.AppError)
 }
 

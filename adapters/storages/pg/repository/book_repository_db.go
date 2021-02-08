@@ -67,3 +67,22 @@ func (r BookRepositoryDb) FindBookBySlug(slug string) (*models.Book, *errs.AppEr
 	logger.Warn(fmt.Sprintf("Book not found: [Slug: %s]", slug))
 	return nil, errs.NewError("book not found", http.StatusNotFound)
 }
+
+func (r BookRepositoryDb) FindBooksByOwner(userID int64) ([]models.Book, *errs.AppError) {
+	sql := `SELECT id, title, owner_id, created_at, pages, slug from books where owner_id = $1`
+
+	rows, err := r.client.Query(sql, userID)
+	if err != nil {
+		logger.Error("Error fetching book: " + err.Error())
+		return nil, errs.NewError("book not found", http.StatusNotFound)
+	}
+
+	var books []models.Book
+	for rows.Next() {
+		var b models.Book
+		rows.Scan(&b.ID, &b.Title, &b.OwnerID, &b.CreatedAt, &b.Pages, &b.Slug)
+		logger.Info(fmt.Sprintf("Book found: [Title: %s - OwnerID: %d]", b.Title, b.OwnerID))
+		books = append(books, b)
+	}
+	return books, nil
+}

@@ -47,14 +47,6 @@ func (r UserRepositoryDb) FindUserByExternalId(externalID uuid.UUID) (*models.Us
 	return handleFind(r.client, sql, externalID)
 }
 
-func (r UserRepositoryDb) FindUserByEmail(email string) (*models.User, *errs.AppError) {
-	logger.Info(fmt.Sprintf("Fetch user by Email: %s", email))
-
-	sql := `SELECT id, full_name, external_id, email FROM users where email = $1`
-
-	return handleFind(r.client, sql, email)
-}
-
 func handleFind(client *sql.DB, sql string, args interface{}) (*models.User, *errs.AppError) {
 	rows, err := client.Query(sql, args)
 	if err != nil {

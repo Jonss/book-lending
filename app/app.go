@@ -26,8 +26,9 @@ func Start() {
 	bookRepository := repository.NewBookRepositoryDB(dbClient)
 	bookStatusRepository := repository.NewBookStatusRepositoryDb(dbClient)
 
+	findBookUsecase := usecases.NewFindBooksUsecase(bookRepository)
 	createUserUsecase := usecases.NewCreateUserUseCase(userRepository)
-	findUserUsecase := usecases.NewFindUserUseCase(userRepository)
+	findUserUsecase := usecases.NewFindUserUseCase(userRepository, findBookUsecase)
 	bookStatusUsecase := usecases.NewAddBookUsecase(bookRepository, findUserUsecase, bookStatusRepository)
 	lendBookUseCase := usecases.NewLendBookUsecase(bookStatusRepository, bookRepository, findUserUsecase)
 	returnBookUsecase := usecases.NewReturnBookUsecase(bookStatusRepository, findUserUsecase)

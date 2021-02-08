@@ -11,6 +11,7 @@ import (
 	"github.com/Jonss/book-lending/adapters/api/graphqlapi/graph/generated"
 	"github.com/Jonss/book-lending/adapters/api/graphqlapi/graph/model"
 	"github.com/Jonss/book-lending/app/dto/request"
+	"github.com/Jonss/book-lending/app/dto/response"
 	"github.com/Jonss/book-lending/infra/logger"
 	"github.com/google/uuid"
 )
@@ -117,13 +118,15 @@ func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error
 		return nil, errors.New(err.Message)
 	}
 
+	collection := buildCollection(response.Books)
+
 	user := &model.User{
-		Name:      response.FullName,
-		Email:     response.Email,
-		ID:        response.LoggedUserId.String(),
-		CreatedAt: response.CreatedAt,
+		Name:       response.FullName,
+		Email:      response.Email,
+		ID:         response.LoggedUserId.String(),
+		CreatedAt:  response.CreatedAt,
+		Collection: collection,
 	}
-	// todo incluir collection
 
 	return user, nil
 }
@@ -136,3 +139,18 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+func buildCollection(books []response.BookResponse) []*model.Book {
+	var modelBooks []*model.Book
+	for _, v := range books {
+		b := &model.Book{
+			Title:     v.Title,
+			ID:        v.ExternalID,
+			Pages:     v.Pages,
+			CreatedAt: v.CreatedAt.String(),
+		}
+
+		modelBooks = append(modelBooks, b)
+	}
+	return modelBooks
+}

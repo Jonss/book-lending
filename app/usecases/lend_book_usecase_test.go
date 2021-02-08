@@ -1,7 +1,6 @@
 package usecases
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/Jonss/book-lending/app/dto/request"
@@ -179,36 +178,6 @@ func TestLendBookToUserWithErrorWhenBookDoesNotExists(t *testing.T) {
 	assert.Nil(t, result)
 	assert.Equal(t, 404, err.Code)
 	assert.Equal(t, "book not found", err.Message)
-}
-
-func TestLendBookToUserWithErrorWhenBookStatusIsNotIdle(t *testing.T) {
-	bookStatusRepoMock := new(BookStatusRepositoryMock)
-	bookRepoMock := new(BookRepositoryMock)
-	findUserUsecaseMock := new(FindUserUsecaseMock)
-
-	ownerUUID := uuid.New()
-	lenderUUID := uuid.MustParse("1320480d-d88c-48bd-802c-89932970aa4b")
-	expectedUser := userResponseToBuildStub(1, "jupiter.stein@gmail.com.", "Júpiter Stein", ownerUUID)
-	expectedBook := bookModelStub()
-	expectedOwner := userResponseToBuildStub(2, "machado@gmail.com", "Machado", lenderUUID)
-	lendBookRequest := lendBookRequestStub()
-
-	findUserUsecaseMock.On("FindUserByID", lenderUUID).Return(&expectedUser, (*errs.AppError)(nil))
-	findUserUsecaseMock.On("FindUserByID", ownerUUID).Return(&expectedOwner, (*errs.AppError)(nil))
-	bookRepoMock.On("FindBookBySlug", lendBookRequest.BookID).Return(&expectedBook, (*errs.AppError)(nil))
-	bookStatusRepoMock.On("VerifyStatus", expectedBook).Return(errs.NewError(fmt.Sprintf("Book is not IDLE. Current status is LENT"), 422))
-
-	usecase := NewLendBookUsecase(bookStatusRepoMock, bookRepoMock, findUserUsecaseMock)
-
-	result, err := usecase.Lend(lendBookRequest, expectedUser.LoggedUserId)
-
-	bookStatusRepoMock.AssertExpectations(t)
-	bookRepoMock.AssertExpectations(t)
-	findUserUsecaseMock.AssertExpectations(t)
-
-	assert.Nil(t, result)
-	assert.Equal(t, 422, err.Code)
-	assert.Equal(t, "Book is not IDLE. Current status is LENT", err.Message)
 }
 
 func lendBookRequestStub() request.LendBookRequest {

@@ -26,6 +26,6 @@ func (u DefaultCreateUserUsecase) Create(req request.UserRequest) (*response.Use
 		return nil, err
 	}
 
-	response := response.UserResponse{}.FromUser(*userCreated)
+	response := response.FromUser(*userCreated)
 	return &response, nil
 }

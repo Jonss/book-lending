@@ -107,7 +107,7 @@ func TestReturnBookWithErrorWhenBookIsNotLent(t *testing.T) {
 
 	assert.Nil(t, response)
 	assert.NotNil(t, err)
-	assert.Equal(t, "can't return book", err.Message)
+	assert.Equal(t, "Book O fim da infância is not LENT to be returned. Current status is IDLE", err.Message)
 	assert.Equal(t, 422, err.Code)
 }
 

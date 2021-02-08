@@ -10,31 +10,36 @@ import (
 
 type FindUserUsecase interface {
 	FindUserByID(externalId uuid.UUID) (*response.UserResponse, *errs.AppError)
-	FindUserByEmail(email string) (*response.UserResponse, *errs.AppError)
 }
 
 type DefaultFindUserUsecase struct {
-	repo repositories.UserRepository
+	repo            repositories.UserRepository
+	findBookUsecase FindBooksUsecase
 }
 
-func NewFindUserUseCase(repo repositories.UserRepository) FindUserUsecase {
-	return DefaultFindUserUsecase{repo}
+func NewFindUserUseCase(repo repositories.UserRepository, findBookUsecase FindBooksUsecase) FindUserUsecase {
+	return DefaultFindUserUsecase{repo, findBookUsecase}
 }
 
 func (u DefaultFindUserUsecase) FindUserByID(externalId uuid.UUID) (*response.UserResponse, *errs.AppError) {
 	user, err := u.repo.FindUserByExternalId(externalId)
-	return handleResponse(user, err)
-}
-
-func (u DefaultFindUserUsecase) FindUserByEmail(email string) (*response.UserResponse, *errs.AppError) {
-	user, err := u.repo.FindUserByEmail(email)
-	return handleResponse(user, err)
-}
-
-func handleResponse(user *models.User, err *errs.AppError) (*response.UserResponse, *errs.AppError) {
 	if err != nil {
 		return nil, err
 	}
-	response := response.UserResponse{}.FromUser(*user)
+
+	books, err := u.findBookUsecase.FindBooksByUserID(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return handleResponse(user, err, books)
+}
+
+func handleResponse(user *models.User, err *errs.AppError, books []response.BookResponse) (*response.UserResponse, *errs.AppError) {
+	if err != nil {
+		return nil, err
+	}
+	response := response.FromUser(*user)
+	response.Books = books
 	return &response, nil
 }
