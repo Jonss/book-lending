@@ -8,6 +8,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.7.4
 	github.com/graphql-go/graphql v0.7.9 // indirect
+	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.9.0
 	github.com/metal3d/go-slugify v0.0.0-20160607203414-7ac2014b2f23
 	github.com/stretchr/testify v1.7.0

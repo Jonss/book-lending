@@ -12,7 +12,7 @@ clean:
 build:
 	CGO_ENABLED=0 GOOS=linux go build -o build/bin cmd/book-lending/main.go
 
-run: env-up
+run:
 	go run cmd/book-lending/main.go
 
 run-docker: clean build

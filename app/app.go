@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/Jonss/book-lending/adapters/storages/pg"
 	"github.com/Jonss/book-lending/adapters/storages/pg/repository"
 	"github.com/Jonss/book-lending/app/usecases"
+	"github.com/Jonss/book-lending/infra/logger"
 	"github.com/gorilla/mux"
 )
 
@@ -48,5 +50,6 @@ func Start() {
 	router.Handle("/query", srv)
 
 	port := os.Getenv("APP_PORT")
+	logger.Info(fmt.Sprintf("Book lending is running on port %s", port))
 	http.ListenAndServe(port, router)
 }
