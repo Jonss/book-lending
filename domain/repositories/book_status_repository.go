@@ -6,7 +6,7 @@ import (
 )
 
 type BookStatusRepository interface {
-	AddStatus(models.Book, int64, string) (*models.Book, *errs.AppError)
+	AddStatus(models.Book, int64, string) (*models.BookStatus, *errs.AppError)
 	VerifyStatus(models.Book) *errs.AppError
 	FindStatusBySlug(string) (*models.BookStatus, *errs.AppError)
 }

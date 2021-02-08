@@ -9,4 +9,5 @@ type Book struct {
 	CreatedAt time.Time
 	Pages     int
 	Slug      string
+	Owner     User
 }

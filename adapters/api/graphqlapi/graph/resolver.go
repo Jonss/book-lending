@@ -10,8 +10,15 @@ type Resolver struct {
 	findUserUsecase   usecases.FindUserUsecase
 	createUserUsecase usecases.CreateUserUsecase
 	addBookUsecase    usecases.AddBookUsecase
+	lendBookUseCase   usecases.LendBookUsecase
+	returnBookUseCase usecases.ReturnBookUsecase
 }
 
-func NewGraphqlResolver(findUserUsecase usecases.FindUserUsecase, createUserUsecase usecases.CreateUserUsecase, addBookUsecase usecases.AddBookUsecase) Resolver {
-	return Resolver{findUserUsecase, createUserUsecase, addBookUsecase}
+func NewGraphqlResolver(findUserUsecase usecases.FindUserUsecase,
+	createUserUsecase usecases.CreateUserUsecase,
+	addBookUsecase usecases.AddBookUsecase,
+	lendBookUseCase usecases.LendBookUsecase,
+	returnBookUseCase usecases.ReturnBookUsecase,
+) Resolver {
+	return Resolver{findUserUsecase, createUserUsecase, addBookUsecase, lendBookUseCase, returnBookUseCase}
 }

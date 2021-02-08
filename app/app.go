@@ -27,13 +27,21 @@ func Start() {
 	createUserUsecase := usecases.NewCreateUserUseCase(userRepository)
 	findUserUsecase := usecases.NewFindUserUseCase(userRepository)
 	bookStatusUsecase := usecases.NewAddBookUsecase(bookRepository, findUserUsecase, bookStatusRepository)
+	lendBookUseCase := usecases.NewLendBookUsecase(bookStatusRepository, bookRepository, findUserUsecase)
+	returnBookUsecase := usecases.NewReturnBookUsecase(bookStatusRepository, findUserUsecase)
 
 	// rest
 	uh := rest.NewUserRestHandler(findUserUsecase)
 	router.HandleFunc("/users/{logged_user_id}", uh.GetUser).Methods(http.MethodGet)
 
 	// graphql
-	resolver := graph.NewGraphqlResolver(findUserUsecase, createUserUsecase, bookStatusUsecase)
+	resolver := graph.NewGraphqlResolver(
+		findUserUsecase,
+		createUserUsecase,
+		bookStatusUsecase,
+		lendBookUseCase,
+		returnBookUsecase,
+	)
 
 	router.Handle("/", graphqlapi.Playground())
 	srv := graphqlapi.GraphlSrv(resolver)

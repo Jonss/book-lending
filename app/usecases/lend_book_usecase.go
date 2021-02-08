@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Jonss/book-lending/app/dto/request"
-	"github.com/Jonss/book-lending/domain/models"
+	"github.com/Jonss/book-lending/app/dto/response"
 	"github.com/Jonss/book-lending/domain/repositories"
 	"github.com/Jonss/book-lending/infra/errs"
 	"github.com/Jonss/book-lending/infra/logger"
@@ -12,7 +12,7 @@ import (
 )
 
 type LendBookUsecase interface {
-	Lend(request.LendBookRequest, uuid.UUID) (*models.Book, *errs.AppError)
+	Lend(request.LendBookRequest, uuid.UUID) (*response.BookLoanResponse, *errs.AppError)
 }
 
 type DefaultLendBookUsecase struct {
@@ -21,15 +21,16 @@ type DefaultLendBookUsecase struct {
 	findUserUsecase FindUserUsecase
 }
 
-func NewDefaultLendBookUsecase(bookStatusRepo repositories.BookStatusRepository, bookRepo repositories.BookRepository, findUserUsecase FindUserUsecase) LendBookUsecase {
+func NewLendBookUsecase(bookStatusRepo repositories.BookStatusRepository, bookRepo repositories.BookRepository, findUserUsecase FindUserUsecase) LendBookUsecase {
 	return DefaultLendBookUsecase{bookStatusRepo, bookRepo, findUserUsecase}
 }
 
-func (u DefaultLendBookUsecase) Lend(req request.LendBookRequest, ownerID uuid.UUID) (*models.Book, *errs.AppError) {
-	uToLend, err := u.findUserUsecase.FindUserByEmail(req.UserToLendEmail)
+func (u DefaultLendBookUsecase) Lend(req request.LendBookRequest, ownerID uuid.UUID) (*response.BookLoanResponse, *errs.AppError) {
+	userID := uuid.MustParse(req.UserToLendID)
+	uToLent, err := u.findUserUsecase.FindUserByID(userID)
 	if err != nil {
 		logger.Error(err.Message)
-		message := fmt.Sprintf("User with email [%s] not found. Cant' lend book [%s]", req.UserToLendEmail, req.Title)
+		message := fmt.Sprintf("User with loggedUserId [%s] not found. Cant' lend book [%s]", req.UserToLendID, req.BookID)
 		logger.Error(message)
 		err.Message = message
 		return nil, err
@@ -40,13 +41,13 @@ func (u DefaultLendBookUsecase) Lend(req request.LendBookRequest, ownerID uuid.U
 		return nil, err
 	}
 
-	book, err := u.bookRepo.FindBookByTitleAndOwnerId(req.Title, uOwner.ID)
+	book, err := u.bookRepo.FindBookBySlug(req.BookID)
 	if err != nil {
 		logger.Error(err.Message)
 		return nil, err
 	}
 
-	if uOwner.ID == uToLend.ID {
+	if uOwner.ID == uToLent.ID {
 		logger.Error(fmt.Sprintf("Can't lend book to owner. [Book: %s. Owner: %s]", book.Title, uOwner.FullName))
 		return nil, errs.NewError("Can't lend your own book", 422)
 	}
@@ -57,7 +58,15 @@ func (u DefaultLendBookUsecase) Lend(req request.LendBookRequest, ownerID uuid.U
 		return nil, err
 	}
 
-	u.bookStatusRepo.AddStatus(*book, uToLend.ID, "LENT")
+	status := "LENT"
+	bookStatus, err := u.bookStatusRepo.AddStatus(*book, uToLent.ID, status)
+	if err != nil {
+		return nil, err
+	}
 
-	return book, nil
+	fromUser := uOwner.LoggedUserId.String()
+	toUser := uToLent.LoggedUserId.String()
+	bookLoanResponse := response.ToBookLoanResponse(*bookStatus, fromUser, toUser, status, "", bookStatus.CreatedAt.String())
+
+	return &bookLoanResponse, nil
 }

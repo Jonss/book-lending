@@ -46,12 +46,12 @@ func (r BookRepositoryDb) BookExists(book models.Book) bool {
 	return counter > 0
 }
 
-func (r BookRepositoryDb) FindBookByTitleAndOwnerId(title string, ownerID int64) (*models.Book, *errs.AppError) {
-	logger.Info(fmt.Sprintf("Search book [%s]", title))
+func (r BookRepositoryDb) FindBookBySlug(slug string) (*models.Book, *errs.AppError) {
+	logger.Info(fmt.Sprintf("Search book [%s]", slug))
 
-	sql := `SELECT (id, title, owner_id, created_at, pages) from books where owner_id = $1 AND title = $2`
+	sql := `SELECT id, title, owner_id, created_at, pages, slug from books where slug = $1`
 
-	rows, err := r.client.Query(sql, ownerID, title)
+	rows, err := r.client.Query(sql, slug)
 	if err != nil {
 		logger.Error("Error fetching book: " + err.Error())
 		return nil, errs.NewError("book not found", http.StatusNotFound)
@@ -59,11 +59,11 @@ func (r BookRepositoryDb) FindBookByTitleAndOwnerId(title string, ownerID int64)
 
 	for rows.Next() {
 		var b models.Book
-		rows.Scan(&b.ID, &b.Title, &b.OwnerID, &b.CreatedAt, &b.Pages)
+		rows.Scan(&b.ID, &b.Title, &b.OwnerID, &b.CreatedAt, &b.Pages, &b.Slug)
 		logger.Info(fmt.Sprintf("Book found: [Title: %s - OwnerID: %d]", b.Title, b.OwnerID))
 		return &b, nil
 	}
 
-	logger.Info(fmt.Sprintf("Book found: [Title: %s - OwnerID: %d]", title, ownerID))
+	logger.Warn(fmt.Sprintf("Book not found: [Slug: %s]", slug))
 	return nil, errs.NewError("book not found", http.StatusNotFound)
 }

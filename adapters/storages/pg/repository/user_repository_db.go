@@ -53,7 +53,6 @@ func (r UserRepositoryDb) FindUserByEmail(email string) (*models.User, *errs.App
 	sql := `SELECT id, full_name, external_id, email FROM users where email = $1`
 
 	return handleFind(r.client, sql, email)
-
 }
 
 func handleFind(client *sql.DB, sql string, args interface{}) (*models.User, *errs.AppError) {

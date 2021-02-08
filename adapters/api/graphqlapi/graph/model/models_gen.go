@@ -15,11 +15,11 @@ type Book struct {
 }
 
 type BookLoan struct {
-	Book       *Book   `json:"book"`
-	FromUser   string  `json:"fromUser"`
-	ToUser     string  `json:"toUser"`
-	LentAt     string  `json:"lentAt"`
-	ReturnedAt *string `json:"returnedAt"`
+	Book       *Book  `json:"book"`
+	FromUser   string `json:"fromUser"`
+	ToUser     string `json:"toUser"`
+	LentAt     string `json:"lentAt"`
+	ReturnedAt string `json:"returnedAt"`
 }
 
 type CreateUserInput struct {

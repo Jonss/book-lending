@@ -43,12 +43,23 @@ func (u DefaultAddBookUsecase) Add(req request.BookRequest, loggedUserId uuid.UU
 	}
 
 	var status string = "IDLE"
-	_, err = u.bookStatusRepo.AddStatus(*createdBook, user.ID, status)
+	b, err := u.bookStatusRepo.AddStatus(*createdBook, user.ID, status)
 	if err != nil {
 		return nil, err
 	}
 
-	response := response.BookResponse{}.ToResponse(*createdBook, *user, status)
+	bookResponse := response.BookResponse{
+		Title:      createdBook.Title,
+		ExternalID: createdBook.Slug,
+		Owner: response.UserResponse{
+			LoggedUserId: b.Book.Owner.LoggedUserId,
+			FullName:     b.Book.Owner.FullName,
+			Email:        b.Book.Owner.Email,
+		},
+		CreatedAt: createdBook.CreatedAt,
+		Status:    b.Status,
+		Pages:     b.Book.Pages,
+	}
 
-	return response, nil
+	return &bookResponse, nil
 }

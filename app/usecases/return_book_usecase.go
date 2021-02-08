@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Jonss/book-lending/app/dto/response"
 	"github.com/Jonss/book-lending/domain/repositories"
 	"github.com/Jonss/book-lending/infra/errs"
 	"github.com/Jonss/book-lending/infra/logger"
@@ -11,7 +12,7 @@ import (
 )
 
 type ReturnBookUsecase interface {
-	Return(string, uuid.UUID) *errs.AppError
+	Return(string, uuid.UUID) (*response.BookLoanResponse, *errs.AppError)
 }
 
 type DefaultReturnBookUsecase struct {
@@ -19,29 +20,35 @@ type DefaultReturnBookUsecase struct {
 	findUserUsecase FindUserUsecase
 }
 
-func NewDefaultReturnBookUsecase(bookStatusRepo repositories.BookStatusRepository, FindUserUsecase FindUserUsecase) ReturnBookUsecase {
+func NewReturnBookUsecase(bookStatusRepo repositories.BookStatusRepository, FindUserUsecase FindUserUsecase) ReturnBookUsecase {
 	return DefaultReturnBookUsecase{bookStatusRepo, FindUserUsecase}
 }
 
-func (u DefaultReturnBookUsecase) Return(slug string, userUUID uuid.UUID) *errs.AppError {
+func (u DefaultReturnBookUsecase) Return(slug string, userUUID uuid.UUID) (*response.BookLoanResponse, *errs.AppError) {
 	user, err := u.findUserUsecase.FindUserByID(userUUID)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error searching user %s to return book [%s]. ", userUUID, slug) + err.Message)
-		return err
+		return nil, err
 	}
 
-	book, err := u.bookStatusRepo.FindStatusBySlug(slug)
+	bookStatus, err := u.bookStatusRepo.FindStatusBySlug(slug)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error searching book %s to return book. ", slug) + err.Message)
-		return err
+		return nil, err
 	}
 
-	if book.BearerUserID != user.ID || book.Status != "LENT" {
-		logger.Warn(fmt.Sprintf("User returning book is not the same with book. Returning userID: %d, User with book: %d", user.ID, book.BearerUserID))
-		return errs.NewError("can't return book", http.StatusUnprocessableEntity)
+	if bookStatus.BearerUserID != user.ID || bookStatus.Status != "LENT" {
+		logger.Warn(fmt.Sprintf("User returning book is not the same with book. Returning userID: %d, User with book: %d", user.ID, bookStatus.BearerUserID))
+		return nil, errs.NewError("can't return book", http.StatusUnprocessableEntity)
 	}
 
-	u.bookStatusRepo.AddStatus(book.Book, book.Book.OwnerID, "IDLE")
+	status := "IDLE"
+	u.bookStatusRepo.AddStatus(*bookStatus.Book, bookStatus.Book.OwnerID, status)
 	logger.Info(fmt.Sprintf("Book returned. %s", slug))
-	return nil
+
+	fromUser := bookStatus.Book.Owner.LoggedUserId.String()
+	toUser := user.LoggedUserId.String()
+	bookLoanResponse := response.ToBookLoanResponse(*bookStatus, fromUser, toUser, status, bookStatus.CreatedAt.String(), "")
+
+	return &bookLoanResponse, nil
 }

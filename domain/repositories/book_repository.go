@@ -8,5 +8,5 @@ import (
 type BookRepository interface {
 	CreateBook(models.Book) (*models.Book, *errs.AppError)
 	BookExists(models.Book) bool
-	FindBookByTitleAndOwnerId(string, int64) (*models.Book, *errs.AppError)
+	FindBookBySlug(string) (*models.Book, *errs.AppError)
 }

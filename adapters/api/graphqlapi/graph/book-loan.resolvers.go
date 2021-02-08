@@ -21,51 +21,111 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUse
 		FullName: input.Name,
 	}
 
-	user, err := r.createUserUsecase.Create(request)
+	response, err := r.createUserUsecase.Create(request)
 	if err != nil {
 		return nil, errors.New(err.Message)
 	}
 
-	gphUser := &model.User{
-		Name:      user.FullName,
-		Email:     user.Email,
-		ID:        user.LoggedUserId.String(),
-		CreatedAt: user.CreatedAt,
+	user := &model.User{
+		Name:      response.FullName,
+		Email:     response.Email,
+		ID:        response.LoggedUserId.String(),
+		CreatedAt: response.CreatedAt,
 	}
 
-	return gphUser, nil
+	return user, nil
 }
 
 func (r *mutationResolver) AddBookToMyCollection(ctx context.Context, loggedUserID string, input model.AddBookInput) (*model.Book, error) {
-	panic(fmt.Errorf("not implemented"))
+	userID := uuid.MustParse(loggedUserID)
+
+	request := request.BookRequest{
+		Title: input.Title,
+		Pages: input.Pages,
+	}
+
+	response, err := r.addBookUsecase.Add(request, userID)
+	if err != nil {
+		return nil, errors.New(err.Message)
+	}
+
+	book := &model.Book{
+		ID:        response.ExternalID,
+		Title:     response.Title,
+		Pages:     response.Pages,
+		CreatedAt: response.CreatedAt.String(),
+	}
+	return book, nil
 }
 
 func (r *mutationResolver) LendBook(ctx context.Context, loggedUserID string, input model.LendBookInput) (*model.BookLoan, error) {
-	panic(fmt.Errorf("not implemented"))
+	userID := uuid.MustParse(loggedUserID)
+
+	request := request.LendBookRequest{
+		BookID:       input.BookID,
+		UserToLendID: input.ToUserID,
+	}
+
+	response, err := r.lendBookUseCase.Lend(request, userID)
+	if err != nil {
+		return nil, errors.New(err.Message)
+	}
+
+	bookLoan := &model.BookLoan{
+		Book: &model.Book{
+			ID:        response.BookResponse.ExternalID,
+			Title:     response.BookResponse.Title,
+			CreatedAt: response.BookResponse.CreatedAt.String(),
+			Pages:     response.BookResponse.Pages,
+		},
+		FromUser: response.ToUserID,
+		ToUser:   response.ToUserID,
+		LentAt:   response.LentAt,
+	}
+
+	return bookLoan, nil
 }
 
 func (r *mutationResolver) ReturnBook(ctx context.Context, loggedUserID string, bookID string) (*model.BookLoan, error) {
+	userID := uuid.MustParse(loggedUserID)
 
-	panic(fmt.Errorf("not implemented"))
+	response, err := r.returnBookUseCase.Return(bookID, userID)
+	if err != nil {
+		return nil, errors.New(err.Message)
+	}
+
+	bookLoan := &model.BookLoan{
+		Book: &model.Book{
+			ID:        response.BookResponse.ExternalID,
+			Title:     response.BookResponse.Title,
+			Pages:     response.BookResponse.Pages,
+			CreatedAt: response.BookResponse.CreatedAt.String(),
+		},
+		FromUser:   response.FromUserID,
+		ToUser:     response.ToUserID,
+		ReturnedAt: response.BookResponse.CreatedAt.String(),
+	}
+	return bookLoan, nil
 }
 
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
 	logger.Info(fmt.Sprintf("UUID %s", id))
 	loggedUserID := uuid.MustParse(id)
 
-	user, err := r.Resolver.findUserUsecase.FindUserByID(loggedUserID)
+	response, err := r.Resolver.findUserUsecase.FindUserByID(loggedUserID)
 	if err != nil {
 		return nil, errors.New(err.Message)
 	}
 
-	gphUser := &model.User{
-		Name:      user.FullName,
-		Email:     user.Email,
-		ID:        user.LoggedUserId.String(),
-		CreatedAt: user.CreatedAt,
+	user := &model.User{
+		Name:      response.FullName,
+		Email:     response.Email,
+		ID:        response.LoggedUserId.String(),
+		CreatedAt: response.CreatedAt,
 	}
+	// todo incluir collection
 
-	return gphUser, nil
+	return user, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
