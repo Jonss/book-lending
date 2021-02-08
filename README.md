@@ -1,5 +1,7 @@
 # Book Lending
 
+Fiz a implementação usando graphql, com a lib gqlgen. O graphql playground está acessível em localhost:8000.
+
 ## Como executar?
 
 Inicialize o db usando o comando `make env-up`. Após isso, pode inicializar a aplicação tanto em um container docker quanto chamando a função main. A chamada do DB está isolada para separar a execução da dependência do db da execução da aplicação, assim, subir a aplicação se torna mais rápido.
@@ -14,6 +16,8 @@ Executa a função, usando as variáveis de ambiente do arquivo env.local. Use o
 ### Graphql
 
 ### Query
+
+#### FindUser
 ```
 query User {
   user(id: "6bf35476-b943-44e4-bf2d-fc4ca3cf21d5") {
