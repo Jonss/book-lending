@@ -37,6 +37,11 @@ func (u DefaultReturnBookUsecase) Return(slug string, userUUID uuid.UUID) (*resp
 		return nil, err
 	}
 
+	toStatus := "IDLE"
+	if bookStatus.Status == toStatus {
+		return nil, errs.NewError(fmt.Sprintf("Book %s is not LENT to be returned. Current status is %s", bookStatus.Book.Title, bookStatus.Status), http.StatusUnprocessableEntity)
+	}
+
 	if bookStatus.BearerUserID != user.ID || bookStatus.Status != "LENT" {
 		logger.Warn(fmt.Sprintf("User returning book is not the same with book. Returning userID: %d, User with book: %d", user.ID, bookStatus.BearerUserID))
 		return nil, errs.NewError("can't return book", http.StatusUnprocessableEntity)

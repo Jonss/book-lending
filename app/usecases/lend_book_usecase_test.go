@@ -23,9 +23,10 @@ func (m *BookStatusRepositoryMock) AddStatus(book models.Book, userLenderID int6
 	return result, args.Get(1).(*errs.AppError)
 }
 
-func (m *BookStatusRepositoryMock) VerifyStatus(book models.Book) *errs.AppError {
+func (m *BookStatusRepositoryMock) VerifyStatus(book models.Book) (*string, *errs.AppError) {
 	args := m.Called(book)
-	return args.Get(0).(*errs.AppError)
+	result := args.Get(0).(*string)
+	return result, args.Get(1).(*errs.AppError)
 }
 
 func (m *BookStatusRepositoryMock) FindStatusBySlug(slug string) (*models.BookStatus, *errs.AppError) {
@@ -47,10 +48,11 @@ func TestLendBookToUserWithSuccess(t *testing.T) {
 	lendBookRequest := lendBookRequestStub()
 	expectedBookStatus := bookStatusModelStub()
 
+	status := "IDLE"
 	findUserUsecaseMock.On("FindUserByID", lenderUUID).Return(&expecteLender, (*errs.AppError)(nil))
 	findUserUsecaseMock.On("FindUserByID", ownerUUID).Return(&expectedOwner, (*errs.AppError)(nil))
 	bookRepoMock.On("FindBookBySlug", lendBookRequest.BookID).Return(&expectedBook, (*errs.AppError)(nil))
-	bookStatusRepoMock.On("VerifyStatus", expectedBook).Return((*errs.AppError)(nil))
+	bookStatusRepoMock.On("VerifyStatus", expectedBook).Return(&status, (*errs.AppError)(nil))
 	bookStatusRepoMock.On("AddStatus", expectedBook, expecteLender.ID, "LENT").Return(&expectedBookStatus, (*errs.AppError)(nil))
 
 	usecase := NewLendBookUsecase(bookStatusRepoMock, bookRepoMock, findUserUsecaseMock)
@@ -67,6 +69,38 @@ func TestLendBookToUserWithSuccess(t *testing.T) {
 	assert.Equal(t, "1320480d-d88c-48bd-802c-89932970aa4b", result.ToUserID)
 	assert.Equal(t, "b511ba57-85e4-499f-8c84-bce8d682d21c", result.FromUserID)
 	assert.Equal(t, "LENT", result.BookResponse.Status)
+}
+
+func TestLendBookToUserWithErrorWhenBookIsAlreadyLent(t *testing.T) {
+	bookStatusRepoMock := new(BookStatusRepositoryMock)
+	bookRepoMock := new(BookRepositoryMock)
+	findUserUsecaseMock := new(FindUserUsecaseMock)
+
+	ownerUUID := uuid.MustParse("b511ba57-85e4-499f-8c84-bce8d682d21c")
+	lenderUUID := uuid.MustParse("1320480d-d88c-48bd-802c-89932970aa4b")
+	expectedOwner := userResponseToBuildStub(1, "jupiter.stein@gmail.com.", "Júpiter Stein", ownerUUID)
+	expectedBook := bookModelStub()
+	expecteLender := userResponseToBuildStub(2, "machado@gmail.com", "Machado", lenderUUID)
+	lendBookRequest := lendBookRequestStub()
+
+	status := "LENT"
+	findUserUsecaseMock.On("FindUserByID", lenderUUID).Return(&expecteLender, (*errs.AppError)(nil))
+	findUserUsecaseMock.On("FindUserByID", ownerUUID).Return(&expectedOwner, (*errs.AppError)(nil))
+	bookRepoMock.On("FindBookBySlug", lendBookRequest.BookID).Return(&expectedBook, (*errs.AppError)(nil))
+	bookStatusRepoMock.On("VerifyStatus", expectedBook).Return(&status, (*errs.AppError)(nil))
+
+	usecase := NewLendBookUsecase(bookStatusRepoMock, bookRepoMock, findUserUsecaseMock)
+
+	result, err := usecase.Lend(lendBookRequest, expectedOwner.LoggedUserId)
+
+	bookStatusRepoMock.AssertExpectations(t)
+	bookRepoMock.AssertExpectations(t)
+	findUserUsecaseMock.AssertExpectations(t)
+
+	assert.Nil(t, result)
+	assert.NotNil(t, err)
+	assert.Equal(t, "Book O fim da infância is not IDLE to be lent. Current status is LENT", err.Message)
+	assert.Equal(t, 422, err.Code)
 }
 
 func TestLendBookToUserWithErrorWhenLenderDoesNotExists(t *testing.T) {

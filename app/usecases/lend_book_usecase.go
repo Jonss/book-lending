@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/Jonss/book-lending/app/dto/request"
 	"github.com/Jonss/book-lending/app/dto/response"
@@ -52,21 +53,25 @@ func (u DefaultLendBookUsecase) Lend(req request.LendBookRequest, ownerID uuid.U
 		return nil, errs.NewError("Can't lend your own book", 422)
 	}
 
-	err = u.bookStatusRepo.VerifyStatus(*book)
+	status, err := u.bookStatusRepo.VerifyStatus(*book)
 	if err != nil {
 		logger.Warn(fmt.Sprintf("Can't lend book to owner. [Book: %s. Owner: %s]", book.Title, uOwner.FullName))
 		return nil, err
 	}
 
-	status := "LENT"
-	bookStatus, err := u.bookStatusRepo.AddStatus(*book, uToLent.ID, status)
+	toStatus := "LENT"
+	if *status == toStatus {
+		return nil, errs.NewError(fmt.Sprintf("Book %s is not IDLE to be lent. Current status is %s", book.Title, *status), http.StatusUnprocessableEntity)
+	}
+
+	bookStatus, err := u.bookStatusRepo.AddStatus(*book, uToLent.ID, toStatus)
 	if err != nil {
 		return nil, err
 	}
 
 	fromUser := uOwner.LoggedUserId.String()
 	toUser := uToLent.LoggedUserId.String()
-	bookLoanResponse := response.ToBookLoanResponse(*bookStatus, fromUser, toUser, status, "", bookStatus.CreatedAt.String())
+	bookLoanResponse := response.ToBookLoanResponse(*bookStatus, fromUser, toUser, toStatus, "", bookStatus.CreatedAt.String())
 
 	return &bookLoanResponse, nil
 }

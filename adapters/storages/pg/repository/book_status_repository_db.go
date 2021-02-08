@@ -24,6 +24,7 @@ func (r BookStatusRepositoryDb) AddStatus(book models.Book, bearerID int64, stat
 	logger.Info(fmt.Sprintf("Add book status. Book: %s - %d. ToUserID: %d Status: [%s]", book.Title, book.ID, bearerID, status))
 
 	createdAt := time.Now()
+
 	sql := "INSERT INTO books_status(book_id, bearer_user_id, status, created_at) VALUES ($1, $2, $3, $4)"
 
 	_, err := r.client.Exec(sql, book.ID, bearerID, status, createdAt)
@@ -42,7 +43,7 @@ func (r BookStatusRepositoryDb) AddStatus(book models.Book, bearerID int64, stat
 	return bookStatus, nil
 }
 
-func (r BookStatusRepositoryDb) VerifyStatus(book models.Book) *errs.AppError {
+func (r BookStatusRepositoryDb) VerifyStatus(book models.Book) (*string, *errs.AppError) {
 	logger.Info(fmt.Sprintf("Verifying book status. Book: %s. Owner: %d", book.Slug, book.OwnerID))
 
 	sql := `SELECT status FROM books_status where book_id = $1 ORDER BY id DESC LIMIT 1`
@@ -52,29 +53,31 @@ func (r BookStatusRepositoryDb) VerifyStatus(book models.Book) *errs.AppError {
 	errScan := row.Scan(&status)
 	if errScan != nil {
 		logger.Error(fmt.Sprintf("Error getting book status: %s", errScan.Error()))
-		return errs.NewError("Error getting book status", 500)
+		return nil, errs.NewError("Error getting book status", 500)
 	}
 
-	if status != "IDLE" {
-		return errs.NewError(fmt.Sprintf("Book %s is not IDLE to be lent. Current status is %s", book.Title, status), http.StatusUnprocessableEntity)
-	}
-
-	return nil
+	return &status, nil
 }
 
 func (r BookStatusRepositoryDb) FindStatusBySlug(slug string) (*models.BookStatus, *errs.AppError) {
 	logger.Info(fmt.Sprintf("Search book slug [%s]", slug))
 
 	sql := `
-		SELECT b.id, b.title, b.owner_id, b.created_at,
-		bs.id, bs.status, bs.bearer_user_id, u.external_id
-		FROM books b
-		INNER JOIN books_status bs
-		ON b.id = bs.book_id
+	SELECT b.id,
+		b.title,
+		b.owner_id,
+		b.created_at,
+		bs.id,
+		bs.status,
+		bs.bearer_user_id,
+		u.external_id
+		from books_status bs
+		inner join books b
+		on b.id = bs.book_id
 		INNER JOIN users u
-		ON b.owner_id = u.id
-		WHERE b.slug = $1
-		order by bs.id limit 1`
+		ON b.id = u.id
+		where b.slug = $1
+		order by bs.id desc limit 1;`
 
 	row := r.client.QueryRow(sql, slug)
 
@@ -84,7 +87,7 @@ func (r BookStatusRepositoryDb) FindStatusBySlug(slug string) (*models.BookStatu
 	errScan := row.Scan(&bookID, &title, &ownerID, &createdAt, &bookStatusID, &status, &bearerUserID, &userExternalID)
 
 	if errScan != nil {
-		logger.Error("Error getting book status" + errScan.Error())
+		logger.Error("Error getting book status " + errScan.Error())
 		return nil, errs.NewError("Book status not found", http.StatusNotFound)
 	}
 
